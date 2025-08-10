@@ -1,6 +1,7 @@
 from datetime import datetime, date
-from typing import Optional
+from typing import Dict, Optional
 from sqlmodel import SQLModel, Field
+from sqlalchemy import Column, JSON
 
 class Species(SQLModel, table=True):
     __tablename__ = "species"
@@ -13,6 +14,9 @@ class StockBatch(SQLModel, table=True):
     batch_id: Optional[int] = Field(default=None, primary_key=True)
     species_id: int = Field(foreign_key="species.species_id")
     start_date: Optional[date] = None
+    expected_harvest_date: Optional[date] = None
+    expected_yield_kg: Optional[float] = None
+    yield_std_kg: Optional[float] = None
 
 class WaterTarget(SQLModel, table=True):
     __tablename__ = "water_targets"
@@ -65,6 +69,22 @@ class HumanFood(SQLModel, table=True):
     name: str
     source_tag_id: Optional[int] = Field(default=None, foreign_key="source_tags.tag_id")
     available_on_farm: bool = False
+=======
+    unit: str = "kg"
+    cost_per_kg: float = 0
+    stock_on_hand: float = 0
+    source: Optional[str] = None
+    nutrients: Dict[str, float] = Field(default_factory=dict, sa_column=Column(JSON))
+    preferences: Dict[str, float] = Field(default_factory=dict, sa_column=Column(JSON))
+    cap: Optional[float] = None
+
+
+class InventorySnapshot(SQLModel, table=True):
+    __tablename__ = "inventory_snapshots"
+    snapshot_id: Optional[int] = Field(default=None, primary_key=True)
+    ingredient_id: int = Field(foreign_key="ingredients.ingredient_id")
+    stock_on_hand: float
+    timestamp: datetime = Field(default_factory=datetime.utcnow)
 
 
 class FeedIngredient(SQLModel, table=True):
@@ -94,6 +114,10 @@ class ProcessingLossFactor(SQLModel, table=True):
     ingredient_id: Optional[int] = Field(default=None, foreign_key="feed_ingredients.ingredient_id")
     process: str
     loss_factor: float
+=======
+    source: Optional[str] = None
+    nutrients: Dict[str, float] = Field(default_factory=dict, sa_column=Column(JSON))
+    cap: Optional[float] = None
 
 
 class Nutrient(SQLModel, table=True):
@@ -101,3 +125,41 @@ class Nutrient(SQLModel, table=True):
     nutrient_id: Optional[int] = Field(default=None, primary_key=True)
     name: str
     unit: str
+
+
+class YieldForecast(SQLModel, table=True):
+    __tablename__ = "yield_forecasts"
+    forecast_id: Optional[int] = Field(default=None, primary_key=True)
+    batch_id: int = Field(foreign_key="stock_batches.batch_id")
+    forecast_time: datetime = Field(default_factory=datetime.utcnow)
+    expected_harvest_date: Optional[date] = None
+    expected_yield_kg: Optional[float] = None
+    yield_std_kg: Optional[float] = None
+
+
+class AdjustmentLog(SQLModel, table=True):
+    __tablename__ = "adjustment_logs"
+    adjustment_id: Optional[int] = Field(default=None, primary_key=True)
+    batch_id: int = Field(foreign_key="stock_batches.batch_id")
+    field_name: str
+    previous_value: Optional[str] = None
+    new_value: Optional[str] = None
+    timestamp: datetime = Field(default_factory=datetime.utcnow)
+=======
+class PersonaRequirement(SQLModel, table=True):
+    """Nutrient requirements for a given persona."""
+
+    __tablename__ = "persona_requirements"
+    id: Optional[int] = Field(default=None, primary_key=True)
+    persona: str
+    nutrient: str
+    amount: float
+
+
+class FeedRequirement(SQLModel, table=True):
+    """Global nutrient requirements for formulating feed."""
+
+    __tablename__ = "feed_requirements"
+    id: Optional[int] = Field(default=None, primary_key=True)
+    nutrient: str
+    amount: float
