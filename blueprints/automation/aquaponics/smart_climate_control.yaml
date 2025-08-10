@@ -1,0 +1,165 @@
+blueprint:
+  name: Smart Climate Controller
+  description: |
+    Combine hysteresis, thermal inertia, and weather compensation to drive
+    a climate device. Uses helper entities for tunable parameters.
+  domain: automation
+  input:
+    climate:
+      name: Climate device
+      selector:
+        entity:
+          domain: climate
+    indoor_temp:
+      name: Indoor temperature sensor
+      selector:
+        entity:
+          domain: sensor
+    outdoor_temp:
+      name: Outdoor temperature sensor
+      selector:
+        entity:
+          domain: sensor
+    weather_entity:
+      name: Weather entity for forecast
+      selector:
+        entity:
+          domain: weather
+    t_base_cool:
+      name: Base cooling setpoint (helper)
+      selector:
+        entity:
+          domain: input_number
+    k_cool:
+      name: Cooling gain (helper)
+      selector:
+        entity:
+          domain: input_number
+    t_out_ref:
+      name: Outdoor reference temperature (helper)
+      selector:
+        entity:
+          domain: input_number
+    deadband:
+      name: Deadband (helper)
+      selector:
+        entity:
+          domain: input_number
+    min_cycle_minutes:
+      name: Minimum cycle time in minutes (helper)
+      selector:
+        entity:
+          domain: input_number
+    preconditioning_enabled:
+      name: Preconditioning toggle
+      selector:
+        entity:
+          domain: input_boolean
+    inertia_gain:
+      name: Inertia gain minutes per degree (helper)
+      selector:
+        entity:
+          domain: input_number
+    max_lead_minutes:
+      name: Maximum preconditioning lead minutes (helper)
+      selector:
+        entity:
+          domain: input_number
+    precondition_time:
+      name: Daily preconditioning check time
+      default: "12:30:00"
+      selector:
+        time:
+
+variables:
+  climate: !input climate
+  indoor_temp: !input indoor_temp
+  outdoor_temp: !input outdoor_temp
+  weather_entity: !input weather_entity
+  t_base_cool: !input t_base_cool
+  k_cool: !input k_cool
+  t_out_ref: !input t_out_ref
+  deadband: !input deadband
+  min_cycle_minutes: !input min_cycle_minutes
+  preconditioning_enabled: !input preconditioning_enabled
+  inertia_gain: !input inertia_gain
+  max_lead_minutes: !input max_lead_minutes
+  precondition_time: !input precondition_time
+
+trigger:
+  - platform: time_pattern
+    minutes: "/5"
+    id: weather_comp
+  - platform: state
+    entity_id: !input indoor_temp
+    id: demand
+  - platform: time
+    at: !input precondition_time
+    id: precondition
+
+action:
+  - choose:
+      - conditions: "{{ trigger.id in ['weather_comp', 'demand'] }}"
+        sequence:
+          - variables:
+              t_out: "{{ states(outdoor_temp) | float(30) }}"
+              t_base: "{{ states(t_base_cool) | float(24) }}"
+              k: "{{ states(k_cool) | float(0.15) }}"
+              t_ref: "{{ states(t_out_ref) | float(30) }}"
+              t_sp: "{{ (t_base - k * (t_out - t_ref)) | round(1) }}"
+              t: "{{ states(indoor_temp) | float(25) }}"
+              sp: "{{ state_attr(climate, 'temperature') | float(t_sp) }}"
+              db: "{{ states(deadband) | float(0.4) }}"
+              min_cycle: "{{ states(min_cycle_minutes) | int(8) }}"
+          - service: climate.set_temperature
+            target:
+              entity_id: !input climate
+            data:
+              temperature: "{{ t_sp }}"
+          - choose:
+              - conditions: "{{ t > sp + db }}"
+                sequence:
+                  - condition: template
+                    value_template: "{{ (now() - states[climate].last_changed).total_seconds() > min_cycle * 60 }}"
+                  - service: climate.set_hvac_mode
+                    target:
+                      entity_id: !input climate
+                    data:
+                      hvac_mode: cool
+              - conditions: "{{ t < sp - db }}"
+                sequence:
+                  - condition: template
+                    value_template: "{{ (now() - states[climate].last_changed).total_seconds() > min_cycle * 60 }}"
+                  - service: climate.turn_off
+                    target:
+                      entity_id: !input climate
+      - conditions: "{{ trigger.id == 'precondition' }}"
+        sequence:
+          - variables:
+              t: "{{ states(indoor_temp) | float(25) }}"
+              sp: "{{ state_attr(climate, 'temperature') | float(24) }}"
+              peak: "{{ state_attr(weather_entity, 'forecast')[0].temperature | float(33) }}"
+              gain_min: "{{ states(inertia_gain) | float(15) }}"
+              max_lead: "{{ states(max_lead_minutes) | float(60) }}"
+              err: "{{ max(0, (t - sp)) }}"
+              lead: "{{ [ (err * gain_min) | round(0), max_lead ] | min }}"
+          - condition: state
+            entity_id: !input preconditioning_enabled
+            state: "on"
+          - condition: template
+            value_template: "{{ peak >= 31 }}"
+          - service: climate.set_temperature
+            target:
+              entity_id: !input climate
+            data:
+              temperature: "{{ (sp - 0.5) | round(1) }}"
+          - delay:
+              minutes: "{{ lead | int }}"
+          - service: climate.set_temperature
+            target:
+              entity_id: !input climate
+            data:
+              temperature: "{{ sp }}"
+mode: queued
+max: 10
+

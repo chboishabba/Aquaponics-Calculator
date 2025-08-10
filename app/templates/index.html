@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <title>Aquaponics Dashboard</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+  <h1>Recent Readings</h1>
+  <table id="readings">
+    <thead><tr><th>Parameter</th><th>Value</th><th>Time</th></tr></thead>
+    <tbody></tbody>
+  </table>
+
+  <h2>Alerts</h2>
+  <ul id="alerts"></ul>
+
+  <h2>pH Last 7 Days</h2>
+  <canvas id="phChart" width="400" height="200"></canvas>
+
+  <script>
+    async function load() {
+      const readingsRes = await fetch('/readings?limit=20');
+      const readings = await readingsRes.json();
+      const tbody = document.querySelector('#readings tbody');
+      tbody.innerHTML = '';
+      readings.forEach(r => {
+        const tr = document.createElement('tr');
+        if (r.breach) tr.style.color = 'red';
+        tr.innerHTML = `<td>${r.parameter}</td><td>${r.value}</td><td>${r.timestamp}</td>`;
+        tbody.appendChild(tr);
+      });
+
+      const alertsRes = await fetch('/alerts');
+      const alerts = await alertsRes.json();
+      const ul = document.getElementById('alerts');
+      ul.innerHTML = '';
+      alerts.forEach(a => {
+        const li = document.createElement('li');
+        li.textContent = `${a.message} at ${a.timestamp}`;
+        ul.appendChild(li);
+      });
+
+      const phRes = await fetch('/readings?parameter=pH');
+      const ph = await phRes.json();
+      const ctx = document.getElementById('phChart').getContext('2d');
+      new Chart(ctx, {
+        type: 'line',
+        data: {
+          labels: ph.map(r => r.timestamp),
+          datasets: [{ label: 'pH', data: ph.map(r => r.value) }]
+        }
+      });
+    }
+    load();
+  </script>
+</body>
+</html>
