@@ -51,15 +51,20 @@ class EventLog(SQLModel, table=True):
     message: str
     timestamp: datetime = Field(default_factory=datetime.utcnow)
 
-
-class Ingredient(SQLModel, table=True):
-    __tablename__ = "ingredients"
-    ingredient_id: Optional[int] = Field(default=None, primary_key=True)
+class SourceTag(SQLModel, table=True):
+    __tablename__ = "source_tags"
+    tag_id: Optional[int] = Field(default=None, primary_key=True)
     name: str
-    unit: str = "kg"
-    cost_per_kg: float = 0
-    stock_on_hand: float = 0
-    source: Optional[str] = None
+    on_farm: bool = False
+    description: Optional[str] = None
+
+
+class HumanFood(SQLModel, table=True):
+    __tablename__ = "human_foods"
+    food_id: Optional[int] = Field(default=None, primary_key=True)
+    name: str
+    source_tag_id: Optional[int] = Field(default=None, foreign_key="source_tags.tag_id")
+    available_on_farm: bool = False
 
 
 class FeedIngredient(SQLModel, table=True):
@@ -69,7 +74,26 @@ class FeedIngredient(SQLModel, table=True):
     unit: str = "kg"
     cost_per_kg: float = 0
     stock_on_hand: float = 0
-    source: Optional[str] = None
+    source_tag_id: Optional[int] = Field(default=None, foreign_key="source_tags.tag_id")
+    available_on_farm: bool = False
+
+
+class SeasonalYield(SQLModel, table=True):
+    __tablename__ = "seasonal_yields"
+    yield_id: Optional[int] = Field(default=None, primary_key=True)
+    food_id: Optional[int] = Field(default=None, foreign_key="human_foods.food_id")
+    ingredient_id: Optional[int] = Field(default=None, foreign_key="feed_ingredients.ingredient_id")
+    season: str
+    yield_kg: float
+
+
+class ProcessingLossFactor(SQLModel, table=True):
+    __tablename__ = "processing_loss_factors"
+    loss_id: Optional[int] = Field(default=None, primary_key=True)
+    food_id: Optional[int] = Field(default=None, foreign_key="human_foods.food_id")
+    ingredient_id: Optional[int] = Field(default=None, foreign_key="feed_ingredients.ingredient_id")
+    process: str
+    loss_factor: float
 
 
 class Nutrient(SQLModel, table=True):
