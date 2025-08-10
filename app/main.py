@@ -1,5 +1,9 @@
 from datetime import datetime, date
+
+from datetime import datetime
+import os
 from typing import List, Optional
+
 from fastapi import FastAPI, Depends, Query, Request
 from fastapi.templating import Jinja2Templates
 from pydantic import BaseModel
@@ -19,7 +23,13 @@ from .models import (
     WaterTarget,
     YieldForecast,
 )
+
+from .les_client import LESClient
+from .models import (EventLog, FeedLog, GrowthRecord, Species,
+                     StockBatch, WaterReading, WaterTarget)
+
 from .optimization import optimize_feed, optimize_menu
+from .utils import run_optimizations
 
 app = FastAPI()
 templates = Jinja2Templates(directory="app/templates")
@@ -207,3 +217,20 @@ def fish_feed(req: OptimizationRequest):
     ingredients = [i.dict() for i in req.ingredients]
     solution = optimize_feed(ingredients, req.requirements)
     return solution
+
+
+@app.post("/simulate/les")
+def simulate_les(req: OptimizationRequest):
+    """Optimize the feed plan and run an LES simulation.
+
+    Stores a scenario report containing the plan and resulting KPIs.
+    """
+    ingredients = [i.dict() for i in req.ingredients]
+    client = LESClient(base_url=os.getenv("LES_URL", "http://localhost:8001"))
+    result = optimize_feed(ingredients, req.requirements, les_client=client)
+    client.save_report(result["plan"], result.get("kpis", {}))
+    return result
+@app.get("/optimize/aggregate")
+def optimize_aggregate(persona: str, session: Session = Depends(get_session)):
+    """Run both optimizers using database data and aggregate results."""
+    return run_optimizations(session, persona)
