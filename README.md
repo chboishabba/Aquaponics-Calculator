@@ -23,6 +23,15 @@ The schema supports both automated sensor readings and manual data entry. Key pr
 
 Future development will expand this schema and add application logic for dashboards, alerts, and analytics.
 
-## Development Status
+## Analytics Library
 
-At this stage the repository contains only the schema and documentation. No application code or tests have been implemented yet.
+The `aquaponics` package implements a set of reference algorithms for common aquaculture calculations, including:
+
+- Hampel outlier filtering and exponential moving averages
+- NH₃ fraction and dissolved oxygen saturation estimators
+- Nitrification capacity with Q10 temperature correction
+- Thermal Growth Coefficient weight projections
+- Continuous stirred tank reactor mixing model
+- A minimal rule engine for generating threshold-based alerts
+
+Unit tests for these functions are located in the `tests` directory.
