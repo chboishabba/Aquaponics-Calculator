@@ -28,3 +28,13 @@ python -m app.sensor_sim
 - `GET /fcr?batch_id=1` – calculate Feed Conversion Ratio for a batch
 
 This small slice runs end‑to‑end and can be extended with additional parameters, sensors and KPIs.
+
+## Home Assistant Blueprint
+
+A reusable automation blueprint for temperature‑keyed dissolved oxygen control is available under
+[`homeassistant/blueprints/aquaponics/temp_keyed_do_control.yaml`](homeassistant/blueprints/aquaponics/temp_keyed_do_control.yaml).
+It adjusts aeration based on DO percent saturation, water temperature and recent feeding events with
+configurable gains, deadband and minimum cycle protection.
+
+An auxiliary blueprint, [`homeassistant/blueprints/aquaponics/feeding_activity_monitor.yaml`](homeassistant/blueprints/aquaponics/feeding_activity_monitor.yaml),
+toggles a *recent feeding* flag for a configurable window whenever the feeder switch turns on.
