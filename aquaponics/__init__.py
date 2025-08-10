@@ -1,3 +1,4 @@
+
 """Core algorithms for aquaponics analytics."""
 
 from .filters import hampel_filter, ewma
@@ -16,4 +17,10 @@ __all__ = [
     "tgc_growth",
     "Alert",
     "check_threshold",
-]
+
+"""Utilities for aquaponics calculations."""
+
+from .kpis import feed_conversion_ratio
+
+__all__ = ["feed_conversion_ratio"]
+

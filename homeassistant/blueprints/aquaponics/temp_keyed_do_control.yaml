@@ -1,0 +1,130 @@
+blueprint:
+  name: Aquaponics • Temp-keyed DO control
+  description: >
+    Maintains dissolved oxygen based on percent saturation with a temperature-compensated target and feed bump.
+  domain: automation
+  input:
+    do_sensor:
+      name: Dissolved oxygen (mg/L) sensor
+      selector:
+        entity:
+          domain: sensor
+    temperature_sensor:
+      name: Water temperature (°C) sensor
+      selector:
+        entity:
+          domain: sensor
+    aeration_switch:
+      name: Aeration switch
+      selector:
+        entity:
+          domain: switch
+    feeding_flag:
+      name: Recent feeding flag
+      selector:
+        entity:
+          domain: input_boolean
+    salinity_sensor:
+      name: Salinity (ppt) sensor (optional)
+      default: ""
+      selector:
+        entity:
+          domain: sensor
+    base_target:
+      name: Base DO target (% sat)
+      default: 85
+      selector:
+        number:
+          min: 0
+          max: 100
+          step: 0.1
+          unit_of_measurement: "%"
+    gain_per_c:
+      name: Gain per °C above 22
+      default: 1.2
+      selector:
+        number:
+          min: 0
+          max: 5
+          step: 0.1
+          unit_of_measurement: "%/ °C"
+    feed_bump:
+      name: Feed bump (%)
+      default: 6
+      selector:
+        number:
+          min: 0
+          max: 20
+          step: 0.1
+    cap_target:
+      name: Cap target (%)
+      default: 98
+      selector:
+        number:
+          min: 0
+          max: 100
+          step: 0.1
+    deadband:
+      name: Deadband (%)
+      default: 2
+      selector:
+        number:
+          min: 0.5
+          max: 5
+          step: 0.1
+    min_cycle:
+      name: Minimum cycle time (minutes)
+      default: 6
+      selector:
+        number:
+          min: 1
+          max: 60
+          step: 1
+
+trigger:
+  - platform: state
+    entity_id: !input do_sensor
+  - platform: state
+    entity_id: !input temperature_sensor
+  - platform: state
+    entity_id: !input feeding_flag
+
+variables:
+  T: "{{ states('!input temperature_sensor') | float(25) }}"
+  S: >-
+    {% set s = '!input salinity_sensor' %}
+    {% if s == '' %}
+      0
+    {% else %}
+      {{ states(s) | float(0) }}
+    {% endif %}
+  dos_fw: "{{ 14.652 - 0.41022*T + 0.0079910*T*T - 0.000077774*T*T*T }}"
+  dos: "{{ dos_fw * (1 - 0.000975 * S) }}"
+  do_mgl: "{{ states('!input do_sensor') | float(7.5) }}"
+  pct_sat: "{{ 100 * do_mgl / dos }}"
+  base: !input base_target
+  gain: !input gain_per_c
+  bump: "{{ !input feed_bump if is_state('!input feeding_flag', 'on') else 0 }}"
+  cap: !input cap_target
+  target: "{{ [base + gain * max(0, T - 22) + bump, cap] | min }}"
+  db: !input deadband
+  demand_on: "{{ pct_sat < (target - db) }}"
+  demand_off: "{{ pct_sat > (target + db) }}"
+  min_cycle_sec: "{{ !input min_cycle * 60 }}"
+  last_change: "{{ (now() - states['!input aeration_switch'].last_changed).total_seconds() }}"
+
+action:
+  - choose:
+      - conditions:
+          - "{{ demand_on and last_change > min_cycle_sec }}"
+        sequence:
+          - service: switch.turn_on
+            target:
+              entity_id: !input aeration_switch
+      - conditions:
+          - "{{ demand_off and last_change > min_cycle_sec }}"
+        sequence:
+          - service: switch.turn_off
+            target:
+              entity_id: !input aeration_switch
+mode: single

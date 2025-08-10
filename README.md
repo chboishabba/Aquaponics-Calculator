@@ -1,27 +1,47 @@
 # Aquaponics Calculator
 
-This repository hosts the early specification work for an aquaculture / aquaponics management application. The project aims to track water chemistry, operational data, feed efficiency, and system hardware to support efficient and sustainable production.
+This repository hosts the early specification work for an aquaculture / aquaponics management application. The initial FastAPI implementation provides a thin slice of functionality to build on.
+
+## Roadmap
+
+A high-level roadmap illustrating planned phases and data flow between the nutrient databases, optimizers and LES is available in [docs/roadmap.md](docs/roadmap.md).
 
 ## Database Schema
 
-The initial database schema is defined in [`schema.sql`](schema.sql). It models:
+The initial database schema is defined in [`schema.sql`](schema.sql) and modeled in the application with SQLModel.
 
-- Species and stock batches
-- Water chemistry readings and targets
-- Feeding plans and feed logs
-- Growth records for performance tracking
-- System hardware inventory and maintenance logs
-- Operational events and sensor metadata
+## Getting Started
 
-## Sensor Integration Plan
+```bash
+pip install -r requirements.txt
+python -m app.seed  # create database and seed defaults
+uvicorn app.main:app --reload
+```
 
-The schema supports both automated sensor readings and manual data entry. Key priorities:
+Visit `http://localhost:8000` for a minimal dashboard. A background simulator can post demo readings:
 
-1. **Tier 1 (Real-time sensors)**: pH, temperature, dissolved oxygen, salinity/conductivity, flow/pump status.
-2. **Tier 2 (Semi-automated)**: Ammonia, nitrite, nitrate (sensors if available; otherwise manual logs).
-3. **Tier 3 (Manual-only)**: Alkalinity, hardness, phosphate and other maintenance events.
+```bash
+python -m app.sensor_sim
+```
 
-Future development will expand this schema and add application logic for dashboards, alerts, and analytics.
+## API Endpoints
+
+- `POST /readings` – add a new water reading
+- `GET /readings` – list readings with optional filters
+- `GET /alerts` – current alert events
+- `GET /fcr?batch_id=1` – calculate Feed Conversion Ratio for a batch
+
+This small slice runs end‑to‑end and can be extended with additional parameters, sensors and KPIs.
+
+## Home Assistant Blueprint
+
+A reusable automation blueprint for temperature‑keyed dissolved oxygen control is available under
+[`homeassistant/blueprints/aquaponics/temp_keyed_do_control.yaml`](homeassistant/blueprints/aquaponics/temp_keyed_do_control.yaml).
+It adjusts aeration based on DO percent saturation, water temperature and recent feeding events with
+configurable gains, deadband and minimum cycle protection.
+
+An auxiliary blueprint, [`homeassistant/blueprints/aquaponics/feeding_activity_monitor.yaml`](homeassistant/blueprints/aquaponics/feeding_activity_monitor.yaml),
+toggles a *recent feeding* flag for a configurable window whenever the feeder switch turns on.
 
 ## Analytics Library
 
@@ -35,3 +55,8 @@ The `aquaponics` package implements a set of reference algorithms for common aqu
 - A minimal rule engine for generating threshold-based alerts
 
 Unit tests for these functions are located in the `tests` directory.
+
+## Documentation
+
+- [AI architecture overview](docs/ai_architecture.md)
+
