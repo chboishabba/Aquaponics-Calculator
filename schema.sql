@@ -97,3 +97,45 @@ CREATE TABLE event_logs (
     timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     location TEXT
 );
+
+-- New tables for human foods and feed ingredients
+
+CREATE TABLE source_tags (
+    tag_id SERIAL PRIMARY KEY,
+    name TEXT NOT NULL,
+    description TEXT,
+    on_farm BOOLEAN DEFAULT FALSE
+);
+
+CREATE TABLE human_foods (
+    food_id SERIAL PRIMARY KEY,
+    name TEXT NOT NULL,
+    source_tag_id INTEGER REFERENCES source_tags(tag_id),
+    available_on_farm BOOLEAN DEFAULT FALSE
+);
+
+CREATE TABLE feed_ingredients (
+    ingredient_id SERIAL PRIMARY KEY,
+    name TEXT NOT NULL,
+    unit TEXT DEFAULT 'kg',
+    cost_per_kg DECIMAL DEFAULT 0,
+    stock_on_hand DECIMAL DEFAULT 0,
+    source_tag_id INTEGER REFERENCES source_tags(tag_id),
+    available_on_farm BOOLEAN DEFAULT FALSE
+);
+
+CREATE TABLE seasonal_yields (
+    yield_id SERIAL PRIMARY KEY,
+    food_id INTEGER REFERENCES human_foods(food_id),
+    ingredient_id INTEGER REFERENCES feed_ingredients(ingredient_id),
+    season TEXT NOT NULL,
+    yield_kg DECIMAL
+);
+
+CREATE TABLE processing_loss_factors (
+    loss_id SERIAL PRIMARY KEY,
+    food_id INTEGER REFERENCES human_foods(food_id),
+    ingredient_id INTEGER REFERENCES feed_ingredients(ingredient_id),
+    process TEXT NOT NULL,
+    loss_factor DECIMAL
+);
