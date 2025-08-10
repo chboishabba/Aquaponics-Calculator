@@ -9,6 +9,7 @@ from .database import create_db_and_tables, get_session
 from .models import (EventLog, FeedLog, GrowthRecord, Species,
                      StockBatch, WaterReading, WaterTarget)
 from .optimization import optimize_feed, optimize_menu
+from .utils import run_optimizations
 
 app = FastAPI()
 templates = Jinja2Templates(directory="app/templates")
@@ -115,3 +116,9 @@ def fish_feed(req: OptimizationRequest):
     ingredients = [i.dict() for i in req.ingredients]
     solution = optimize_feed(ingredients, req.requirements)
     return solution
+
+
+@app.get("/optimize/aggregate")
+def optimize_aggregate(persona: str, session: Session = Depends(get_session)):
+    """Run both optimizers using database data and aggregate results."""
+    return run_optimizations(session, persona)

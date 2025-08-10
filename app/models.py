@@ -1,6 +1,7 @@
 from datetime import datetime, date
-from typing import Optional
+from typing import Dict, Optional
 from sqlmodel import SQLModel, Field
+from sqlalchemy import Column, JSON
 
 class Species(SQLModel, table=True):
     __tablename__ = "species"
@@ -60,6 +61,9 @@ class Ingredient(SQLModel, table=True):
     cost_per_kg: float = 0
     stock_on_hand: float = 0
     source: Optional[str] = None
+    nutrients: Dict[str, float] = Field(default_factory=dict, sa_column=Column(JSON))
+    preferences: Dict[str, float] = Field(default_factory=dict, sa_column=Column(JSON))
+    cap: Optional[float] = None
 
 
 class FeedIngredient(SQLModel, table=True):
@@ -70,6 +74,8 @@ class FeedIngredient(SQLModel, table=True):
     cost_per_kg: float = 0
     stock_on_hand: float = 0
     source: Optional[str] = None
+    nutrients: Dict[str, float] = Field(default_factory=dict, sa_column=Column(JSON))
+    cap: Optional[float] = None
 
 
 class Nutrient(SQLModel, table=True):
@@ -77,3 +83,22 @@ class Nutrient(SQLModel, table=True):
     nutrient_id: Optional[int] = Field(default=None, primary_key=True)
     name: str
     unit: str
+
+
+class PersonaRequirement(SQLModel, table=True):
+    """Nutrient requirements for a given persona."""
+
+    __tablename__ = "persona_requirements"
+    id: Optional[int] = Field(default=None, primary_key=True)
+    persona: str
+    nutrient: str
+    amount: float
+
+
+class FeedRequirement(SQLModel, table=True):
+    """Global nutrient requirements for formulating feed."""
+
+    __tablename__ = "feed_requirements"
+    id: Optional[int] = Field(default=None, primary_key=True)
+    nutrient: str
+    amount: float
