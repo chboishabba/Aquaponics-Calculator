@@ -42,3 +42,7 @@ configurable gains, deadband and minimum cycle protection.
 
 An auxiliary blueprint, [`homeassistant/blueprints/aquaponics/feeding_activity_monitor.yaml`](homeassistant/blueprints/aquaponics/feeding_activity_monitor.yaml),
 toggles a *recent feeding* flag for a configurable window whenever the feeder switch turns on.
+
+## Documentation
+
+- [AI architecture overview](docs/ai_architecture.md)
