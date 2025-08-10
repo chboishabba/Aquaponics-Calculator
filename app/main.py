@@ -2,11 +2,13 @@ from datetime import datetime
 from typing import List, Optional
 from fastapi import FastAPI, Depends, Query, Request
 from fastapi.templating import Jinja2Templates
+from pydantic import BaseModel
 from sqlmodel import Session, select
 
 from .database import create_db_and_tables, get_session
 from .models import (EventLog, FeedLog, GrowthRecord, Species,
                      StockBatch, WaterReading, WaterTarget)
+from .optimization import optimize_feed, optimize_menu
 
 app = FastAPI()
 templates = Jinja2Templates(directory="app/templates")
@@ -88,3 +90,28 @@ def calculate_fcr(batch_id: int, session: Session = Depends(get_session)):
     weight_gain = weights[-1] - weights[0]
     fcr = total_feed / weight_gain if weight_gain else None
     return {"batch_id": batch_id, "fcr": fcr}
+
+
+class IngredientInput(BaseModel):
+    name: str
+    cost: float = 0
+    nutrients: dict
+
+
+class OptimizationRequest(BaseModel):
+    ingredients: List[IngredientInput]
+    requirements: dict
+
+
+@app.post("/optimize/human-menu")
+def human_menu(req: OptimizationRequest):
+    ingredients = [i.dict() for i in req.ingredients]
+    solution = optimize_menu(ingredients, req.requirements)
+    return solution
+
+
+@app.post("/optimize/fish-feed")
+def fish_feed(req: OptimizationRequest):
+    ingredients = [i.dict() for i in req.ingredients]
+    solution = optimize_feed(ingredients, req.requirements)
+    return solution
