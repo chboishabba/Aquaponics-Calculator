@@ -12,6 +12,7 @@ from .les_client import LESClient
 from .models import (EventLog, FeedLog, GrowthRecord, Species,
                      StockBatch, WaterReading, WaterTarget)
 from .optimization import optimize_feed, optimize_menu
+from .utils import run_optimizations
 
 app = FastAPI()
 templates = Jinja2Templates(directory="app/templates")
@@ -131,3 +132,7 @@ def simulate_les(req: OptimizationRequest):
     result = optimize_feed(ingredients, req.requirements, les_client=client)
     client.save_report(result["plan"], result.get("kpis", {}))
     return result
+@app.get("/optimize/aggregate")
+def optimize_aggregate(persona: str, session: Session = Depends(get_session)):
+    """Run both optimizers using database data and aggregate results."""
+    return run_optimizations(session, persona)
