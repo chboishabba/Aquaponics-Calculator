@@ -43,6 +43,20 @@ configurable gains, deadband and minimum cycle protection.
 An auxiliary blueprint, [`homeassistant/blueprints/aquaponics/feeding_activity_monitor.yaml`](homeassistant/blueprints/aquaponics/feeding_activity_monitor.yaml),
 toggles a *recent feeding* flag for a configurable window whenever the feeder switch turns on.
 
+## Analytics Library
+
+The `aquaponics` package implements a set of reference algorithms for common aquaculture calculations, including:
+
+- Hampel outlier filtering and exponential moving averages
+- NH₃ fraction and dissolved oxygen saturation estimators
+- Nitrification capacity with Q10 temperature correction
+- Thermal Growth Coefficient weight projections
+- Continuous stirred tank reactor mixing model
+- A minimal rule engine for generating threshold-based alerts
+
+Unit tests for these functions are located in the `tests` directory.
+
 ## Documentation
 
 - [AI architecture overview](docs/ai_architecture.md)
+
