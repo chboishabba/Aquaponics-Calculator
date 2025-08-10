@@ -6,6 +6,9 @@ except Exception:  # pragma: no cover - fallback when ortools missing
     pywraplp = None
 
 
+def optimize_menu(ingredients: List[Dict], requirements: Dict[str, float], les_client: Optional[object] = None):
+    """Simple linear program for a human menu.
+=======
 def optimize_menu(
     ingredients: List[Dict],
     requirements: Dict[str, float],
@@ -14,6 +17,7 @@ def optimize_menu(
     inventory: Optional[Dict[str, float]] = None,
 ) -> Dict[str, float]:
     """Simple linear program for a human menu with optional constraints.
+
 
     Args:
         ingredients: list of dicts with keys name, cost, nutrients (dict).
@@ -64,6 +68,30 @@ def optimize_menu(
         if status != pywraplp.Solver.OPTIMAL:
             raise ValueError("No optimal menu found")
 
+        solution = {name: var.solution_value() for name, var in variables.items()}
+    else:
+        # Fallback: pick cheapest ingredient satisfying each nutrient independently
+        solution: Dict[str, float] = {ing["name"]: 0 for ing in ingredients}
+        for nutrient, minimum in requirements.items():
+            best = min(
+                ingredients,
+                key=lambda ing: (
+                    float("inf")
+                    if ing["nutrients"].get(nutrient, 0) == 0
+                    else ing.get("cost", 0) / ing["nutrients"].get(nutrient, 0)
+                ),
+            )
+            needed = minimum / best["nutrients"].get(nutrient, 1)
+            solution[best["name"]] = max(solution[best["name"]], needed)
+    if les_client:
+        kpis = les_client.run_simulation(solution)
+        return {"plan": solution, "kpis": kpis}
+    return solution
+
+
+def optimize_feed(ingredients: List[Dict], requirements: Dict[str, float], les_client: Optional[object] = None):
+    """Least cost fish feed formulation."""
+
         return {name: var.solution_value() for name, var in variables.items()}
     # Fallback: pick cheapest ingredient satisfying each nutrient independently
     solution: Dict[str, float] = {ing["name"]: 0 for ing in ingredients}
@@ -108,6 +136,7 @@ def optimize_feed(
     """Least cost fish feed formulation with optional caps and inventory limits."""
     caps = caps or {}
     inventory = inventory or {}
+
     if pywraplp:
         solver = pywraplp.Solver.CreateSolver("GLOP")
         if solver is None:
@@ -139,6 +168,28 @@ def optimize_feed(
         status = solver.Solve()
         if status != pywraplp.Solver.OPTIMAL:
             raise ValueError("No optimal feed found")
+
+        solution = {name: var.solution_value() for name, var in variables.items()}
+    else:
+        # Fallback heuristic: allocate nutrient using cheapest ingredient
+        solution: Dict[str, float] = {ing["name"]: 0 for ing in ingredients}
+        for nutrient, minimum in requirements.items():
+            best = min(
+                ingredients,
+                key=lambda ing: (
+                    float("inf")
+                    if ing["nutrients"].get(nutrient, 0) == 0
+                    else ing.get("cost", 0) / ing["nutrients"].get(nutrient, 0)
+                ),
+            )
+            needed = minimum / best["nutrients"].get(nutrient, 1)
+            solution[best["name"]] = max(solution[best["name"]], needed)
+        total = sum(solution.values()) or 1.0
+        solution = {name: value / total for name, value in solution.items()}
+    if les_client:
+        kpis = les_client.run_simulation(solution)
+        return {"plan": solution, "kpis": kpis}
+    return solution
 
         return {name: var.solution_value() for name, var in variables.items()}
     # Fallback heuristic: allocate nutrient using cheapest ingredient
