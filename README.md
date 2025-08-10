@@ -58,5 +58,20 @@ Unit tests for these functions are located in the `tests` directory.
 
 ## Documentation
 
+
+## Analytics Library
+
+The `aquaponics` package implements a set of reference algorithms for common aquaculture calculations, including:
+
+- Hampel outlier filtering and exponential moving averages
+- NH₃ fraction and dissolved oxygen saturation estimators
+- Nitrification capacity with Q10 temperature correction
+- Thermal Growth Coefficient weight projections
+- Continuous stirred tank reactor mixing model
+- A minimal rule engine for generating threshold-based alerts
+
+Unit tests for these functions are located in the `tests` directory.
+
 - [AI architecture overview](docs/ai_architecture.md)
+
 

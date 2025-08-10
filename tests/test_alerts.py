@@ -1,4 +1,3 @@
-
 from aquaponics.alerts import check_threshold
 
 def test_check_threshold_levels():
@@ -8,6 +7,7 @@ def test_check_threshold_levels():
     assert warning.severity == "warning"
     normal = check_threshold("pH", 7.5, 7, 8)
     assert normal.severity == "normal"
+
 
 import sys
 from pathlib import Path

@@ -28,6 +28,7 @@ def check_threshold(parameter: str, value: float, min_value: float, max_value: f
     )
     return Alert(parameter, severity, msg)
 
+
 """Alert calculation utilities.
 
 This module provides helpers to derive warning thresholds for a measured
@@ -74,3 +75,4 @@ def calculate_warn_range(min_value: float, max_value: float, warn_pct: float):
     warn_low = min_value + margin
     warn_high = max_value - margin
     return warn_low, warn_high
+
