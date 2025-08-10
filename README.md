@@ -2,6 +2,10 @@
 
 This repository hosts the early specification work for an aquaculture / aquaponics management application. The initial FastAPI implementation provides a thin slice of functionality to build on.
 
+## Roadmap
+
+A high-level roadmap illustrating planned phases and data flow between the nutrient databases, optimizers and LES is available in [docs/roadmap.md](docs/roadmap.md).
+
 ## Database Schema
 
 The initial database schema is defined in [`schema.sql`](schema.sql) and modeled in the application with SQLModel.
