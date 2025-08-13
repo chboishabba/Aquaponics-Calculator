@@ -1,3 +1,4 @@
+import pytest
 from aquaponics.filters import hampel_filter, ewma
 
 def test_hampel_filter_removes_outlier():
@@ -5,7 +6,22 @@ def test_hampel_filter_removes_outlier():
     filtered = hampel_filter(data, window_size=2, n_sigmas=3)
     assert filtered[3] == 1
 
+
+def test_hampel_filter_invalid_window_size():
+    with pytest.raises(ValueError, match="window_size must be positive"):
+        hampel_filter([1, 2, 3], window_size=0)
+
+
+def test_hampel_filter_invalid_n_sigmas():
+    with pytest.raises(ValueError, match="n_sigmas must be positive"):
+        hampel_filter([1, 2, 3], window_size=1, n_sigmas=0)
+
 def test_ewma_basic():
     data = [1, 2, 3]
     result = ewma(data, alpha=0.5)
     assert result == [1, 1.5, 2.25]
+
+
+def test_ewma_invalid_alpha():
+    with pytest.raises(ValueError, match="alpha must satisfy 0 < alpha <= 1"):
+        ewma([1, 2, 3], alpha=1.5)

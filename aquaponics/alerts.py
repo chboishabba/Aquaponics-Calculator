@@ -1,13 +1,16 @@
 """Basic rule engine for generating alerts."""
+
 from __future__ import annotations
 
 from dataclasses import dataclass
+
 
 @dataclass
 class Alert:
     parameter: str
     severity: str
     message: str
+
 
 def check_threshold(parameter: str, value: float, min_value: float, max_value: float,
                     warn_pct: float = 0.1) -> Alert:
@@ -27,17 +30,6 @@ def check_threshold(parameter: str, value: float, min_value: float, max_value: f
         else f"{parameter} approaching limit" if severity == "warning" else f"{parameter} within range"
     )
     return Alert(parameter, severity, msg)
-
-
-"""Alert calculation utilities.
-
-This module provides helpers to derive warning thresholds for a measured
-parameter. The function checks the input configuration for obvious
-mistakes and raises :class:`ValueError` with a descriptive message when
-invalid values are supplied.
-"""
-
-from __future__ import annotations
 
 
 def calculate_warn_range(min_value: float, max_value: float, warn_pct: float):
