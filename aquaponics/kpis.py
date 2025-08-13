@@ -1,5 +1,3 @@
-"""Aquaponics key performance indicators."""
-
 """Key performance indicators for aquaponics systems."""
 
 from __future__ import annotations

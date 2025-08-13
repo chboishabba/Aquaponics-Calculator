@@ -9,6 +9,10 @@ def nh3_fraction(pH: float, temp_c: float) -> float:
 
     Based on the freshwater formulation of Emerson et al. (1975).
     """
+    if not (0 <= pH <= 14):
+        raise ValueError("pH must be between 0 and 14")
+    if temp_c < 0:
+        raise ValueError("temp_c must be non-negative")
     temp_k = temp_c + 273.15
     pka = 0.09018 + 2729.92 / temp_k
     return 1.0 / (1 + 10 ** (pka - pH))
@@ -18,6 +22,8 @@ def do_saturation(temp_c: float) -> float:
 
     Uses the Weiss (1970) equation for zero salinity at sea level.
     """
+    if not (0 <= temp_c <= 40):
+        raise ValueError("temp_c must be between 0 and 40")
     temp_k = temp_c + 273.15
     ln_do = (-139.34411
              + 1.575701e5 / temp_k
@@ -43,5 +49,11 @@ def tan_capacity_q10(surface_area_m2: float, base_rate: float, temp_c: float,
     q10: float
         Temperature coefficient.
     """
+    if surface_area_m2 < 0:
+        raise ValueError("surface_area_m2 must be non-negative")
+    if base_rate < 0:
+        raise ValueError("base_rate must be non-negative")
+    if q10 <= 0:
+        raise ValueError("q10 must be positive")
     rate = base_rate * q10 ** ((temp_c - ref_temp_c) / 10.0)
     return surface_area_m2 * rate
