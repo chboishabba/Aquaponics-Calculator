@@ -25,6 +25,19 @@ def test_tan_capacity_q10():
     assert math.isclose(cap, 10 * 1.5)
 
 
+def test_water_negative_inputs():
+    with pytest.raises(ValueError):
+        nh3_fraction(pH=7.0, temp_c=-1)
+    with pytest.raises(ValueError):
+        do_saturation(-1)
+    with pytest.raises(ValueError):
+        tan_capacity_q10(surface_area_m2=-1, base_rate=1, temp_c=20)
+    with pytest.raises(ValueError):
+        tan_capacity_q10(surface_area_m2=1, base_rate=-1, temp_c=20)
+    with pytest.raises(ValueError):
+        tan_capacity_q10(surface_area_m2=1, base_rate=1, temp_c=-20)
+    with pytest.raises(ValueError):
+        tan_capacity_q10(surface_area_m2=1, base_rate=1, temp_c=20, ref_temp_c=-5)
 def test_tan_capacity_q10_invalid_surface_area():
     with pytest.raises(ValueError, match="surface_area_m2 must be non-negative"):
         tan_capacity_q10(surface_area_m2=-1, base_rate=1, temp_c=20)
