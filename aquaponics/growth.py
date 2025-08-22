@@ -17,6 +17,10 @@ def tgc_growth(initial_weight_g: float, tgc: float, temp_sum: float) -> float:
         raise ValueError("initial_weight_g must be non-negative")
     if tgc < 0:
         raise ValueError("tgc must be non-negative")
+    if initial_weight_g <= 0:
+        raise ValueError("initial_weight_g must be positive")
+    if tgc <= 0:
+        raise ValueError("tgc must be positive")
     if temp_sum < 0:
         raise ValueError("temp_sum must be non-negative")
     w13 = initial_weight_g ** (1.0 / 3.0)

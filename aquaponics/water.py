@@ -16,6 +16,8 @@ def nh3_fraction(pH: float, temp_c: float) -> float:
     temp_c: float
         Water temperature in Celsius. Must be non-negative.
     """
+    if not (0 <= pH <= 14):
+        raise ValueError("pH must be between 0 and 14")
     if temp_c < 0:
         raise ValueError("temp_c must be non-negative")
     temp_k = temp_c + 273.15
@@ -34,6 +36,8 @@ def do_saturation(temp_c: float) -> float:
     """
     if temp_c < 0:
         raise ValueError("temp_c must be non-negative")
+    if not (0 <= temp_c <= 40):
+        raise ValueError("temp_c must be between 0 and 40")
     temp_k = temp_c + 273.15
     ln_do = (-139.34411
              + 1.575701e5 / temp_k
@@ -67,5 +71,7 @@ def tan_capacity_q10(surface_area_m2: float, base_rate: float, temp_c: float,
         raise ValueError("temp_c must be non-negative")
     if ref_temp_c < 0:
         raise ValueError("ref_temp_c must be non-negative")
+    if q10 <= 0:
+        raise ValueError("q10 must be positive")
     rate = base_rate * q10 ** ((temp_c - ref_temp_c) / 10.0)
     return surface_area_m2 * rate
